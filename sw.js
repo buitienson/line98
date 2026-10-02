@@ -1,7 +1,7 @@
 // Lưu sẵn game vào máy để chơi được khi không có mạng.
 // Có mạng: luôn lấy bản mới nhất từ máy chủ (và cất lại vào máy).
 // Mất mạng hoặc mạng quá chậm: dùng bản đã cất.
-const CACHE = "line98-20261002-211404";
+const CACHE = "line98-20261002-211513";
 const FILES = ["./", "index.html", "icon.png", "manifest.json"];
 
 self.addEventListener("install", e => {
@@ -29,7 +29,8 @@ self.addEventListener("fetch", e => {
     try {
       // Mạng chậm quá 4 giây thì dùng luôn bản trong máy cho mẹ khỏi chờ
       const res = await Promise.race([
-        fetch(req, { cache: "no-store" }),
+        // trang chính phải hỏi bằng địa chỉ trơn: Request kiểu "navigate" không cho kèm tuỳ chọn cache
+        fetch(isPage ? req.url : req, { cache: "no-store" }),
         new Promise((_, rej) => setTimeout(() => rej(new Error("chậm")), 4000))
       ]);
       if (res.ok) cache.put(key, res.clone());
