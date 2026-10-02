@@ -340,15 +340,15 @@
   const N = 9;
 
   // 7 màu nền dùng chung — loại thứ k luôn mang màu thứ k, nên dù kiểu hình nào cũng phân biệt được bằng màu
-  // 7 màu bi theo app Line mẹ quen: đỏ, xanh dương, xanh lá, vàng, xanh ngọc, hồng tím, đỏ sẫm.
-  // Đỏ sẫm để cuối — mức Dễ/Vừa không có, khỏi lẫn với đỏ tươi.
-  // Màu bão hoà mạnh, mép tối vẫn giữ sắc màu (không pha đen) cho bi rực và long lanh
-  const BASE = ["#ff1414", "#1846ff", "#14d414", "#ffe600", "#00e4f4", "#f22cff", "#b0081c"];
+  // 7 màu bi của Line 98 gốc, mỗi màu một góc riêng trên vòng màu cho dễ phân biệt:
+  // đỏ (0°), xanh dương (230°), xanh lá (120°), vàng (55°), xanh lơ (190°), tím hồng (300°), nâu (25°, tối).
+  // Nâu để cuối — mức Dễ/Vừa không có. Nâu thay đỏ sẫm cũ vì đỏ sẫm dễ lẫn với đỏ.
+  const BASE = ["#ff1010", "#1238ff", "#10c418", "#ffe000", "#00d4ff", "#e010e0", "#8a4a12"];
   const SHADE = [
-    ["#ff9c8c", "#a80000"], ["#8cb0ff", "#0014b0"], ["#9cff8c", "#007800"], ["#ffffa0", "#c09400"],
-    ["#a0ffff", "#0090b0"], ["#ffa8ff", "#9000a8"], ["#ff6070", "#5a0010"]
+    ["#ff9c8c", "#a00000"], ["#8ca8ff", "#0010a8"], ["#9cff94", "#006a00"], ["#ffffa8", "#b08800"],
+    ["#b0f4ff", "#0078b8"], ["#ffa0ff", "#800080"], ["#e0a870", "#3e1c00"]
   ];
-  const TINT = ["#ffc4c4", "#c4d0ff", "#c4f0c4", "#fff7a8", "#c0f4f8", "#f8c8f8", "#e8b8c0"];
+  const TINT = ["#ffc4c4", "#c4d0ff", "#c4f0c4", "#fff7a8", "#c0f0ff", "#f8c0f8", "#e8d0b8"];
 
   const THEMES = {
     color:   { name: "Bi màu cơ bản",  sub: "Bi tròn bóng như Line 98 gốc", kind: "ball" },
@@ -796,7 +796,7 @@
   // Mỗi lần đăng bản mới, deploy.sh ghi số phiên bản mới vào version.json.
   // Trang hỏi file đó lúc mở lại app và mỗi 5 phút; thấy khác thì tự tải lại.
   // Ván đang chơi đã lưu trong máy nên tải lại không mất gì.
-  const APP_VERSION = "20261002-211513";
+  const APP_VERSION = "20261002-211844";
   async function latestVersion() {
     const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
     return r.ok ? (await r.json()).version : null;

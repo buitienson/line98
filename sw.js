@@ -1,7 +1,7 @@
 // Lưu sẵn game vào máy để chơi được khi không có mạng.
 // Có mạng: luôn lấy bản mới nhất từ máy chủ (và cất lại vào máy).
 // Mất mạng hoặc mạng quá chậm: dùng bản đã cất.
-const CACHE = "line98-20261002-211513";
+const CACHE = "line98-20261002-211844";
 const FILES = ["./", "index.html", "icon.png", "manifest.json"];
 
 self.addEventListener("install", e => {
