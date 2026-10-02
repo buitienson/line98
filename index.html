@@ -562,7 +562,7 @@
     if (score > (bests[key] || 0)) { bests[key] = score; store.set(BEST_KEY, JSON.stringify(bests)); }
     led($("best"), bests[key] || 0);
     $("btnSound").innerHTML = pref.sound ? ICON_SOUND_ON : ICON_SOUND_OFF;
-    $("lvlTag").textContent = `Mức ${lv().name} · ${THEMES[pref.theme].name}`;
+    $("lvlTag").textContent = `Mức ${lv().name} · ${THEMES[pref.theme].name} · ${shortVer()}`;
     $("undo").disabled = !history.length || busy;
     fitGlyphs();
   }
@@ -796,7 +796,7 @@
   // Mỗi lần đăng bản mới, deploy.sh ghi số phiên bản mới vào version.json.
   // Trang hỏi file đó lúc mở lại app và mỗi 5 phút; thấy khác thì tự tải lại.
   // Ván đang chơi đã lưu trong máy nên tải lại không mất gì.
-  const APP_VERSION = "20261002-211303";
+  const APP_VERSION = "20261002-211404";
   async function latestVersion() {
     const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
     return r.ok ? (await r.json()).version : null;
@@ -819,6 +819,10 @@
     location.replace(location.pathname + "?v=" + encodeURIComponent(v));
   }
 
+  function shortVer() {
+    const v = APP_VERSION;
+    return v.startsWith("__") ? "bản thử" : `bản ${v.slice(6, 8)}/${v.slice(4, 6)} ${v.slice(9, 11)}:${v.slice(11, 13)}`;
+  }
   const verText = () => APP_VERSION.startsWith("__") ? "Bản thử trên máy"
     : "Bản đang chơi: " + APP_VERSION.slice(6, 8) + "/" + APP_VERSION.slice(4, 6) + "/" + APP_VERSION.slice(0, 4)
       + " " + APP_VERSION.slice(9, 11) + ":" + APP_VERSION.slice(11, 13);
