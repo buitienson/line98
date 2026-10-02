@@ -90,14 +90,15 @@
     display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr));
     gap: 1px; background: var(--line); padding: 0; border: 3px solid #4a4f58; border-top-width: 2px;
     width: 100%; aspect-ratio: 1 / 1; touch-action: manipulation; position: relative;
+    /* iOS cũ (<15) không hiểu aspect-ratio: chiều cao được JS đặt bằng chiều rộng (squareBoard) */
     box-shadow: 0 8px 18px rgba(0,0,0,.35);
   }
   .cell {
     background: var(--cell); position: relative;
     display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: visible;
   }
-  .board .ball { width: 84%; aspect-ratio: 1 / 1; height: auto; }
-  .board .ball.small { width: 30%; opacity: .95; }
+  .board .ball { width: 84%; height: 84%; }
+  .board .ball.small { width: 30%; height: 30%; opacity: .95; }
   .ball {
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     line-height: 1; transition: transform .15s;
@@ -141,7 +142,7 @@
     0%, 100% { transform: translateX(0); } 20% { transform: translateX(-12%); }
     40% { transform: translateX(12%); } 60% { transform: translateX(-8%); } 80% { transform: translateX(6%); }
   }
-  .fx { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 5; }
+  .fx { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; overflow: visible; z-index: 5; }
   .fx > div { position: absolute; left: 0; top: 0; border-radius: 50%; will-change: transform, opacity; }
   .fx .pts {
     border-radius: 0; font-weight: 900; color: #ffe14a; white-space: nowrap;
@@ -165,7 +166,7 @@
 
   /* Hộp thoại */
   .overlay {
-    position: fixed; inset: 0; background: rgba(0,10,40,.6); z-index: 10;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,10,40,.6); z-index: 10;
     display: none; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto;
   }
   .overlay.show { display: flex; }
@@ -486,6 +487,12 @@
   }
   boardEl.appendChild(fx);
 
+  // iOS cũ (<13.4) không có element.animate: bỏ hiệu ứng bay, game vẫn chạy bình thường
+  function anim(el, frames, opts) {
+    if (typeof el.animate !== "function") { el.remove(); return; }
+    try { el.animate(frames, opts).onfinish = () => el.remove(); }
+    catch (e) { el.remove(); }
+  }
   // Hiệu ứng nổ: vòng sáng + mảnh vỡ bắn ra từ từng viên bi
   function burst(i, t) {
     const cs = cells[i].offsetWidth;
@@ -494,10 +501,10 @@
     const ring = document.createElement("div");
     Object.assign(ring.style, { width: cs + "px", height: cs + "px", border: `3px solid ${light}`, boxShadow: `0 0 12px ${col}` });
     fx.appendChild(ring);
-    ring.animate([
+    anim(ring, [
       { transform: `translate(${x - cs/2}px, ${y - cs/2}px) scale(.3)`, opacity: 1 },
       { transform: `translate(${x - cs/2}px, ${y - cs/2}px) scale(1.7)`, opacity: 0 }
-    ], { duration: 450, easing: "ease-out" }).onfinish = () => ring.remove();
+    ], { duration: 450, easing: "ease-out" });
     for (let k = 0; k < 12; k++) {
       const p = document.createElement("div"), sz = cs * (0.12 + Math.random() * 0.14);
       Object.assign(p.style, { width: sz + "px", height: sz + "px",
@@ -505,10 +512,10 @@
       fx.appendChild(p);
       const a = (k / 12) * Math.PI * 2 + Math.random() * 0.5, d = cs * (0.8 + Math.random() * 1.1);
       const x0 = x - sz / 2, y0 = y - sz / 2;
-      p.animate([
+      anim(p, [
         { transform: `translate(${x0}px, ${y0}px) scale(1)`, opacity: 1 },
         { transform: `translate(${x0 + Math.cos(a) * d}px, ${y0 + Math.sin(a) * d + cs * 0.4}px) scale(.2)`, opacity: 0 }
-      ], { duration: 550 + Math.random() * 250, easing: "cubic-bezier(.2,.7,.4,1)" }).onfinish = () => p.remove();
+      ], { duration: 550 + Math.random() * 250, easing: "cubic-bezier(.2,.7,.4,1)" });
     }
   }
   function floatPoints(set, pts) {
@@ -520,11 +527,11 @@
     el.style.fontSize = cells[0].offsetWidth * 0.9 + "px";
     fx.appendChild(el);
     const w = el.offsetWidth, h = el.offsetHeight;
-    el.animate([
+    anim(el, [
       { transform: `translate(${sx - w/2}px, ${sy - h/2}px) scale(.5)`, opacity: 0 },
       { transform: `translate(${sx - w/2}px, ${sy - h/2 - 10}px) scale(1.15)`, opacity: 1, offset: .25 },
       { transform: `translate(${sx - w/2}px, ${sy - h/2 - 70}px) scale(1)`, opacity: 0 }
-    ], { duration: 1100, easing: "ease-out" }).onfinish = () => el.remove();
+    ], { duration: 1100, easing: "ease-out" });
   }
   // Cỡ chữ của hình theo cỡ ô
   function fitGlyphs() {
@@ -537,10 +544,16 @@
     document.querySelectorAll(".next .glyph").forEach(g => g.style.fontSize = "22px");
     document.querySelectorAll(".choice .glyph").forEach(g => g.style.fontSize = "17px");
   }
-  window.addEventListener("resize", fitGlyphs);
-  window.addEventListener("load", fitGlyphs);
+  function squareBoard() {
+    const w = boardEl.getBoundingClientRect().width;
+    if (w) boardEl.style.height = w + "px";
+  }
+  window.addEventListener("resize", () => { squareBoard(); fitGlyphs(); });
+  window.addEventListener("orientationchange", () => setTimeout(() => { squareBoard(); fitGlyphs(); }, 300));
+  window.addEventListener("load", () => { squareBoard(); fitGlyphs(); });
 
   function render(popSet, growSet) {
+    squareBoard();
     for (let i = 0; i < N * N; i++) {
       const c = cells[i];
       c.innerHTML = "";
@@ -663,8 +676,16 @@
     return true;
   }
 
+  // Mọi lỗi giữa chừng đều phải nhả "busy", nếu không bàn sẽ đứng im không bấm được
   async function onCell(i) {
     if (busy) return;
+    try { await move(i); }
+    catch (e) { $("msg").textContent = ""; }
+    finally {
+      if (busy) { busy = false; render(); save(); }
+    }
+  }
+  async function move(i) {
     if (grid[i] >= 0) {
       selected = (selected === i) ? -1 : i;
       if (selected >= 0) { tone("tap"); buzz(12); }
@@ -796,7 +817,7 @@
   // Mỗi lần đăng bản mới, deploy.sh ghi số phiên bản mới vào version.json.
   // Trang hỏi file đó lúc mở lại app và mỗi 5 phút; thấy khác thì tự tải lại.
   // Ván đang chơi đã lưu trong máy nên tải lại không mất gì.
-  const APP_VERSION = "20261002-211844";
+  const APP_VERSION = "20261002-214139";
   async function latestVersion() {
     const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
     return r.ok ? (await r.json()).version : null;
