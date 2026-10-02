@@ -792,7 +792,7 @@
   // Mỗi lần đăng bản mới, deploy.sh ghi số phiên bản mới vào version.json.
   // Trang hỏi file đó lúc mở lại app và mỗi 5 phút; thấy khác thì tự tải lại.
   // Ván đang chơi đã lưu trong máy nên tải lại không mất gì.
-  const APP_VERSION = "20261002-210940";
+  const APP_VERSION = "20261002-211036";
   async function latestVersion() {
     const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
     return r.ok ? (await r.json()).version : null;
