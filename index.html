@@ -103,15 +103,18 @@
     line-height: 1; transition: transform .15s;
   }
   /* Bi bóng: gradient khối cầu + vệt sáng lớn phía trên + ánh hắt phía dưới */
-  .ball.shade { position: relative; box-shadow: 0 3px 4px -1px rgba(0,0,0,.45); }
+  .ball.shade {
+    position: relative; filter: saturate(1.25) contrast(1.06);
+    box-shadow: 0 3px 5px -1px rgba(0,0,0,.5), inset 0 -4px 7px rgba(255,255,255,.28), inset 0 0 0 1px rgba(0,0,0,.12);
+  }
   .ball.shade::before {
     content: ""; position: absolute; left: 18%; top: 7%; width: 44%; height: 30%; border-radius: 50%;
-    background: radial-gradient(ellipse at 50% 45%, rgba(255,255,255,.95), rgba(255,255,255,.55) 40%, rgba(255,255,255,0) 72%);
+    background: radial-gradient(ellipse at 50% 45%, #fff 0%, rgba(255,255,255,.9) 22%, rgba(255,255,255,.45) 48%, rgba(255,255,255,0) 72%);
     transform: rotate(-25deg); pointer-events: none;
   }
   .ball.shade::after {
     content: ""; position: absolute; left: 26%; bottom: 6%; width: 50%; height: 18%; border-radius: 50%;
-    background: radial-gradient(ellipse, rgba(255,255,255,.45), rgba(255,255,255,0) 70%); pointer-events: none;
+    background: radial-gradient(ellipse, rgba(255,255,255,.55), rgba(255,255,255,0) 70%); pointer-events: none;
   }
   .ball .glyph { position: relative; z-index: 1; pointer-events: none; }
   .ball.num .glyph { color: #fff; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,.6); font-family: Arial, sans-serif; }
@@ -339,10 +342,11 @@
   // 7 màu nền dùng chung — loại thứ k luôn mang màu thứ k, nên dù kiểu hình nào cũng phân biệt được bằng màu
   // 7 màu bi theo app Line mẹ quen: đỏ, xanh dương, xanh lá, vàng, xanh ngọc, hồng tím, đỏ sẫm.
   // Đỏ sẫm để cuối — mức Dễ/Vừa không có, khỏi lẫn với đỏ tươi.
-  const BASE = ["#ee1c1c", "#1a3fe0", "#18b818", "#f2e21a", "#18d6dc", "#e048e6", "#8c0c1a"];
+  // Màu bão hoà mạnh, mép tối vẫn giữ sắc màu (không pha đen) cho bi rực và long lanh
+  const BASE = ["#ff1414", "#1846ff", "#14d414", "#ffe600", "#00e4f4", "#f22cff", "#b0081c"];
   const SHADE = [
-    ["#ffb0a8", "#700000"], ["#a8c0ff", "#000c70"], ["#b0ffa8", "#004a00"], ["#ffffc0", "#7a6a00"],
-    ["#c8ffff", "#006068"], ["#ffc8ff", "#601060"], ["#e07080", "#300006"]
+    ["#ff9c8c", "#a80000"], ["#8cb0ff", "#0014b0"], ["#9cff8c", "#007800"], ["#ffffa0", "#c09400"],
+    ["#a0ffff", "#0090b0"], ["#ffa8ff", "#9000a8"], ["#ff6070", "#5a0010"]
   ];
   const TINT = ["#ffc4c4", "#c4d0ff", "#c4f0c4", "#fff7a8", "#c0f4f8", "#f8c8f8", "#e8b8c0"];
 
@@ -449,7 +453,7 @@
     return th.items[order[t]];
   }
 
-  const sphere = t => `radial-gradient(circle at 36% 30%, ${SHADE[t][0]} 0%, ${BASE[t]} 40%, ${SHADE[t][1]} 82%, #000 115%)`;
+  const sphere = t => `radial-gradient(circle at 36% 30%, ${SHADE[t][0]} 0%, ${BASE[t]} 30%, ${BASE[t]} 55%, ${SHADE[t][1]} 92%)`;
 
   function makeBall(t, extra) {
     const b = document.createElement("div");
@@ -792,7 +796,7 @@
   // Mỗi lần đăng bản mới, deploy.sh ghi số phiên bản mới vào version.json.
   // Trang hỏi file đó lúc mở lại app và mỗi 5 phút; thấy khác thì tự tải lại.
   // Ván đang chơi đã lưu trong máy nên tải lại không mất gì.
-  const APP_VERSION = "20261002-211036";
+  const APP_VERSION = "20261002-211303";
   async function latestVersion() {
     const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
     return r.ok ? (await r.json()).version : null;
