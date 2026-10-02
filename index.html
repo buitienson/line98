@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Line 98">
 <meta name="theme-color" content="#232c95">
 <link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.png">
 <title>Line 98 của Mẹ</title>
 <style>
@@ -64,13 +65,6 @@
   .sq:active, .pill:active { transform: translateY(2px); box-shadow: inset 0 2px 0 rgba(255,255,255,.4), 0 1px 0 #0a2d70; }
   .sq:disabled { opacity: .45; }
   .newg { display: flex; justify-content: center; gap: 10px; margin-bottom: 8px; }
-  .pill.upd {
-    font-style: normal; font-size: 17px; padding: 8px 16px;
-    background: linear-gradient(180deg, #7fe0a0 0%, #3cbf6a 48%, #1f9a4c 52%, #188a42 100%);
-    border-color: #0d5a2a; box-shadow: inset 0 2px 0 rgba(255,255,255,.55), 0 3px 0 #0b4a22, 0 4px 8px rgba(0,0,0,.35);
-  }
-  .pill.upd.hot { animation: glow 1s ease-in-out infinite alternate; }
-  @keyframes glow { from { filter: brightness(1); } to { filter: brightness(1.35); box-shadow: 0 0 18px #7fffb0; } }
   .pill { font-size: 22px; padding: 8px 30px; border-radius: 10px; font-style: italic; letter-spacing: .5px; }
 
   /* Bảng điểm đen dính liền trên mép bàn */
@@ -155,6 +149,17 @@
     text-shadow: 0 2px 3px rgba(0,0,0,.5);
   }
 
+  /* Pill thông báo: chỉ để đọc, không bấm được, tự tắt */
+  .toast {
+    position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 20;
+    transform: translate(-50%, 30px); opacity: 0; transition: opacity .35s, transform .35s;
+    pointer-events: none; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis;
+    background: rgba(8,16,60,.88); color: #fff; border: 2px solid #8fe9ff; border-radius: 999px;
+    padding: 10px 22px; font-size: 17px; font-weight: 700; box-shadow: 0 6px 18px rgba(0,0,0,.4);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  @media (min-width: 700px) { .toast { font-size: 22px; padding: 14px 30px; } }
+
   /* Hộp thoại */
   .overlay {
     position: fixed; inset: 0; background: rgba(0,10,40,.6); z-index: 10;
@@ -195,7 +200,6 @@
     .tb { font-size: 16px; }
     .sq { width: 68px; height: 68px; font-size: 34px; border-radius: 14px; }
     .pill { font-size: 32px; padding: 10px 44px; }
-    .pill.upd { font-size: 24px; padding: 10px 22px; }
     .newg { margin-bottom: 12px; }
     .bar { padding: 8px 16px; }
     .lbl { font-size: 15px; }
@@ -255,7 +259,6 @@
   </div>
   <div class="newg">
     <button class="pill" id="new">Ván mới</button>
-    <button class="pill upd" id="btnUpdate" title="Tải bản mới nhất">⟳ Cập nhật</button>
   </div>
   <div class="msg" id="msg"></div>
   </div>
@@ -266,6 +269,8 @@
   </div>
   <div class="board" id="board"></div>
 </div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- Cách chơi -->
 <div class="overlay" id="helpBox">
@@ -293,7 +298,9 @@
       <li><b>Khó</b>: 7 loại bi, mỗi lượt mọc 3 bi — giống Line 98 gốc.</li>
     </ul>
     <p>Đổi mức chơi và kiểu bi ở nút bánh răng. Nút mũi tên quay lại là đi lại, nút loa bật/tắt tiếng.
-      Nút xanh lá <b>⟳ Cập nhật</b> tải bản mới nhất — khi nút nhấp nháy "Có bản mới" là con vừa sửa game.</p>
+      Game tự cập nhật khi có mạng; muốn tải ngay thì vào Tuỳ chọn, mục <b>Cập nhật game</b>.</p>
+    <h3>Không có mạng</h3>
+    <p>Vẫn chơi được bình thường. Chỉ cần đã mở game một lần lúc có mạng là máy tự lưu sẵn.</p>
     <div class="actions"><button class="pill" data-close>Đã hiểu</button></div>
   </div>
 </div>
@@ -308,6 +315,10 @@
     <div class="choices" id="soundChoices"></div>
     <h3>Kiểu bi</h3>
     <div class="choices" id="themeChoices"></div>
+    <h3>Cập nhật game</h3>
+    <div class="choices"><button class="choice" id="btnUpdate">
+      <div><div class="name">⟳ Tải bản mới nhất</div><div class="sub" id="verInfo"></div></div>
+    </button></div>
     <div class="actions"><button class="pill" data-close>Xong</button></div>
   </div>
 </div>
@@ -574,6 +585,7 @@
   const save = () => store.set(SAVE_KEY, snapshot());
 
   function newGame() {
+    if (typeof applyIfPending === "function" && applyIfPending()) { store.set(SAVE_KEY, ""); return; }
     level = pref.level;
     seed = Array.from({ length: 12 }, Math.random);
     grid = Array(N * N).fill(-1);
@@ -780,41 +792,87 @@
   // Mỗi lần đăng bản mới, deploy.sh ghi số phiên bản mới vào version.json.
   // Trang hỏi file đó lúc mở lại app và mỗi 5 phút; thấy khác thì tự tải lại.
   // Ván đang chơi đã lưu trong máy nên tải lại không mất gì.
-  const APP_VERSION = "20261002-210027";
-  let newVersion = null;
+  const APP_VERSION = "20261002-210940";
   async function latestVersion() {
     const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
     return r.ok ? (await r.json()).version : null;
   }
-  function goTo(v) { save(); location.replace(location.pathname + "?v=" + encodeURIComponent(v)); }
-  // Nút "Cập nhật": bấm lúc nào cũng tải lại bản mới nhất từ máy chủ
+  let toastTimer = null;
+  function toast(text, ms = 4000) {
+    const t = $("toast");
+    t.textContent = text; t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), ms);
+  }
+
+  // Tải lại sang bản mới mà giữ nguyên ván: thế cờ đã lưu trong máy, lịch sử "Đi lại" gửi tạm qua sessionStorage
+  function goTo(v) {
+    save();
+    try {
+      sessionStorage.setItem("line98-hist", JSON.stringify(history));
+      sessionStorage.setItem("line98-updated", "1");
+    } catch {}
+    location.replace(location.pathname + "?v=" + encodeURIComponent(v));
+  }
+
+  const verText = () => APP_VERSION.startsWith("__") ? "Bản thử trên máy"
+    : "Bản đang chơi: " + APP_VERSION.slice(6, 8) + "/" + APP_VERSION.slice(4, 6) + "/" + APP_VERSION.slice(0, 4)
+      + " " + APP_VERSION.slice(9, 11) + ":" + APP_VERSION.slice(11, 13);
+  $("verInfo").textContent = verText();
+  // Nút "Tải bản mới nhất" (nằm trong Tuỳ chọn để khỏi bấm nhầm) — bấm là cập nhật ngay
   $("btnUpdate").addEventListener("click", async () => {
     if (busy) return;
-    $("msg").textContent = "Đang tải bản mới nhất…";
+    if (!navigator.onLine) { $("verInfo").textContent = "Đang không có mạng — vẫn chơi bản đã lưu trong máy"; return; }
+    $("verInfo").textContent = "Đang tải bản mới nhất…";
     let v = null;
     try { v = await latestVersion(); } catch {}
-    setTimeout(() => goTo(v || String(Date.now())), 400);
+    if (!v) { $("verInfo").textContent = "Không kết nối được — vẫn chơi bản đã lưu trong máy"; return; }
+    if (v === APP_VERSION) { $("verInfo").textContent = verText() + " — đã là bản mới nhất"; return; }
+    setTimeout(() => goTo(v), 300);
   });
+
+  // Tự cập nhật không gián đoạn: thấy bản mới thì báo bằng pill, tải ngầm,
+  // rồi chỉ chuyển sang bản mới vào lúc mẹ không đang chơi dở tay.
+  let pending = null, idleTimer = null;
+  const IDLE_MS = 60 * 1000;
+  function applyIfPending() {
+    if (!pending || busy) return false;
+    goTo(pending); return true;
+  }
+  function armIdle() {
+    clearTimeout(idleTimer);
+    if (pending) idleTimer = setTimeout(applyIfPending, IDLE_MS);
+  }
+  ["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, armIdle, { passive: true }));
+
   async function checkUpdate() {
-    if (busy || location.protocol === "file:") return;
+    if (busy || pending || location.protocol === "file:" || APP_VERSION.startsWith("__")) return;
     try {
       const v = await latestVersion();
-      if (v && v !== APP_VERSION && APP_VERSION !== "__" + "VERSION__") {
-        newVersion = v;
-        $("btnUpdate").classList.add("hot");
-        $("btnUpdate").textContent = "⟳ Có bản mới";
-        // Mỗi bản chỉ thử tải lại một lần, tránh lặp nếu máy chủ còn giữ bản cũ
-        let tried = null; try { tried = sessionStorage.getItem("line98-tried"); } catch {}
-        if (tried === v) return;
-        try { sessionStorage.setItem("line98-tried", v); } catch {}
-        $("msg").textContent = "Có bản mới, đang cập nhật…";
-        setTimeout(() => goTo(v), 800);
-      }
+      if (!v || v === APP_VERSION) return;
+      // Mỗi bản chỉ thử một lần, tránh lặp nếu máy chủ còn giữ bản cũ
+      let tried = null; try { tried = sessionStorage.getItem("line98-tried"); } catch {}
+      if (tried === v) return;
+      try { sessionStorage.setItem("line98-tried", v); } catch {}
+      pending = v;
+      // tải ngầm trước để lúc chuyển là có ngay
+      fetch("index.html?v=" + encodeURIComponent(v), { cache: "no-store" }).catch(() => {});
+      toast("⟳ Có bản mới — sẽ tự cập nhật, cứ chơi tiếp nhé", 5000);
+      armIdle();
     } catch {}
   }
   setInterval(checkUpdate, 5 * 60 * 1000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) applyIfPending();   // mẹ chuyển sang app khác: cập nhật lúc đó, quay lại là xong
+    else checkUpdate();
+  });
   window.addEventListener("pageshow", checkUpdate);
+
+  // ---------- Chơi không cần mạng ----------
+  // sw.js lưu sẵn game vào máy ở lần mở đầu tiên; mất mạng vẫn mở và chơi được.
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
 
   // ---------- Bắt đầu ----------
   $("new").addEventListener("click", () => {
@@ -836,7 +894,15 @@
 
   const saved = store.get(SAVE_KEY);
   if (saved) {
-    try { restore(saved); render(); } catch { newGame(); }
+    try {
+      restore(saved);
+      try {
+        const h = JSON.parse(sessionStorage.getItem("line98-hist") || "null");
+        if (Array.isArray(h)) history = h;
+        sessionStorage.removeItem("line98-hist");
+      } catch {}
+      render();
+    } catch { newGame(); }
   } else {
     newGame();
     if (!store.get(PREF_KEY)) { // lần đầu mở: hiện cách chơi
@@ -844,6 +910,14 @@
       store.set(PREF_KEY, JSON.stringify(pref));
     }
   }
+
+  // Vừa chuyển sang bản mới: báo nhẹ một câu
+  try {
+    if (sessionStorage.getItem("line98-updated")) {
+      sessionStorage.removeItem("line98-updated");
+      setTimeout(() => toast("✓ Đã cập nhật bản mới — chơi tiếp nhé", 3500), 300);
+    }
+  } catch {}
 })();
 </script>
 </body>

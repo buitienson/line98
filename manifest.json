@@ -1,0 +1,12 @@
+{
+  "name": "Line 98",
+  "short_name": "Line 98",
+  "lang": "vi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#232c95",
+  "theme_color": "#232c95",
+  "icons": [{ "src": "icon.png", "sizes": "180x180", "type": "image/png" }]
+}
