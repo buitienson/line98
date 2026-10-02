@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Line 98">
+<meta name="theme-color" content="#a8a8a8">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>Line 98 của Mẹ</title>
+<style>
+  :root {
+    /* Tông xám bạc của Line 98 trên Windows */
+    --bg: #a8a8a8;
+    --panel: #c0c0c0;
+    --panel2: #d4d0c8;
+    --cell: #c6c6c6;
+    --cell-dark: #808080;
+    --text: #111;
+    --muted: #333;
+    --btn: #d4d0c8;
+    --btn-text: #111;
+    --hi: #ffffff;
+    --lo: #6b6b6b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 10px 16px 28px;
+    user-select: none; -webkit-user-select: none; overflow-x: hidden;
+  }
+  .wrap {
+    width: 100%; max-width: 560px;
+    display: grid; grid-template-columns: 100%;
+    grid-template-areas: "top" "bar" "board" "msg" "actions";
+  }
+  .top { grid-area: top; } .bar { grid-area: bar; } .board { grid-area: board; }
+  .msg { grid-area: msg; } .actions { grid-area: actions; }
+  .top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 2px 0 10px; }
+  .top-btns { display: flex; gap: 8px; flex: 1 1 260px; justify-content: flex-end; }
+  .top-btns .icon-btn { flex: 1; max-width: 160px; }
+  h1 { font-size: 26px; margin: 0; }
+  .lvl-tag { font-size: 16px; color: var(--muted); margin-top: 2px; }
+  .icon-btn {
+    font-size: 18px; font-weight: 700; padding: 10px 14px; border: 0; border-radius: 12px;
+    background: var(--panel2); color: var(--text); cursor: pointer; flex: none;
+    box-shadow: inset 2px 2px 0 var(--hi), inset -2px -2px 0 var(--lo);
+  }
+  .icon-btn:active, button.big:active { box-shadow: inset -2px -2px 0 var(--hi), inset 2px 2px 0 var(--lo); }
+  .bar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel); border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; gap: 10px;
+    box-shadow: inset 2px 2px 0 var(--hi), inset -2px -2px 0 var(--lo);
+  }
+  .stat { text-align: center; min-width: 76px; flex: 1 1 0; }
+  .lbl { font-size: 15px; color: var(--muted); }
+  /* Bảng số đỏ trên nền đen như đồng hồ điểm của Line 98 */
+  .stat .val {
+    background: #000; color: #ff2a1a; border-radius: 4px; padding: 2px 8px; margin-top: 3px;
+    font-family: "Courier New", Menlo, monospace; text-shadow: 0 0 6px rgba(255,40,20,.6);
+    box-shadow: inset 1px 1px 0 var(--lo), inset -1px -1px 0 var(--hi);
+    font-size: calc(30px * var(--k, 1)); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; }
+  .next { display: flex; flex-direction: column; align-items: center; }
+  .next .balls { display: flex; gap: 6px; margin-top: 4px; }
+  .next .balls .ball { width: 34px; height: 34px; }
+
+  .board {
+    display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr)); gap: 3px;
+    background: var(--cell-dark); padding: 3px; border-radius: 2px; gap: 2px;
+    width: 100%; aspect-ratio: 1 / 1; touch-action: manipulation;
+  }
+  .cell {
+    background: var(--cell); border-radius: 0; position: relative;
+    box-shadow: inset 2px 2px 0 #f0f0f0, inset -2px -2px 0 #7a7a7a;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: visible;
+  }
+  .board .ball { width: 86%; aspect-ratio: 1 / 1; height: auto; }
+  .board .ball.small { width: 38%; }
+  .ball {
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    line-height: 1; transition: transform .15s;
+  }
+  /* Bi bóng: nền gradient tạo khối cầu + vệt sáng lớn phía trên + ánh hắt nhẹ phía dưới */
+  .ball.shade {
+    position: relative;
+    box-shadow: 0 4px 5px -1px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.18);
+  }
+  .ball.shade::before {
+    content: ""; position: absolute; left: 16%; top: 8%; width: 46%; height: 32%; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 45%, rgba(255,255,255,.95), rgba(255,255,255,.5) 40%, rgba(255,255,255,0) 72%);
+    transform: rotate(-28deg); pointer-events: none;
+  }
+  .ball.shade::after {
+    content: ""; position: absolute; left: 28%; bottom: 7%; width: 48%; height: 16%; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(255,255,255,.4), rgba(255,255,255,0) 70%); pointer-events: none;
+  }
+  .ball .glyph { position: relative; z-index: 1; }
+  .ball.disk  { box-shadow: 0 2px 3px rgba(0,0,0,.28); }
+  .ball .glyph { pointer-events: none; }
+  .ball.num .glyph { color: #fff; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,.5); font-family: Arial, sans-serif; }
+  .board .ball.small { opacity: .9; }
+  .ball.sel { animation: squish .3s ease-out, jump .45s ease-in-out .3s infinite alternate; }
+  .ball.shake { animation: shake .35s ease-in-out; }
+  .ball.pop { animation: pop .32s ease-in forwards; }
+  .ball.grow { animation: grow .25s ease-out; }
+  .cell.trail::after {
+    content: ""; position: absolute; width: 22%; height: 22%; border-radius: 50%; background: rgba(0,0,0,.25);
+  }
+  @keyframes jump { from { transform: translateY(8%); } to { transform: translateY(-14%); } }
+  @keyframes pop  {
+    0% { transform: scale(1); filter: brightness(1); }
+    40% { transform: scale(1.3); filter: brightness(1.8); }
+    100% { transform: scale(0); opacity: 0; filter: brightness(2.5); }
+  }
+  @keyframes squish {
+    0% { transform: scale(1, 1); } 30% { transform: scale(1.2, .8); }
+    60% { transform: scale(.9, 1.12); } 100% { transform: scale(1, 1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); } 20% { transform: translateX(-12%); }
+    40% { transform: translateX(12%); } 60% { transform: translateX(-8%); } 80% { transform: translateX(6%); }
+  }
+  .board { position: relative; }
+  .fx { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 5; }
+  .fx > div { position: absolute; left: 0; top: 0; border-radius: 50%; will-change: transform, opacity; }
+  .fx .pts {
+    border-radius: 0; font-weight: 900; color: #fff; white-space: nowrap;
+    text-shadow: 0 2px 0 #7a5a00, 0 0 10px rgba(0,0,0,.5);
+  }
+  @keyframes grow { from { transform: scale(.3); } to { transform: scale(1); } }
+
+  .actions { display: flex; gap: 12px; margin-top: 14px; }
+  button.big {
+    flex: 1; font-size: 22px; font-weight: 700; padding: 16px 10px; border: 0; border-radius: 14px;
+    background: var(--btn); color: var(--btn-text); cursor: pointer;
+  }
+  button.big { box-shadow: inset 3px 3px 0 var(--hi), inset -3px -3px 0 var(--lo); border-radius: 6px; }
+  button.big.alt { background: var(--panel2); }
+  #new { background: #f2d24a; }
+  button:disabled { opacity: .45; }
+  .msg { min-height: 30px; text-align: center; font-size: 21px; margin-top: 10px; color: #8a0000; font-weight: 700; }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 10;
+    display: none; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto;
+  }
+  .overlay.show { display: flex; }
+  .dialog {
+    background: var(--panel); border-radius: 18px; padding: 20px; max-width: 520px; width: 100%; margin: auto 0;
+  }
+  .dialog h2 { font-size: 26px; margin: 0 0 12px; text-align: center; }
+  .dialog h3 { font-size: 20px; margin: 18px 0 8px; color: #00008a; }
+  .dialog p, .dialog li { font-size: 18px; line-height: 1.55; }
+  .dialog ul { padding-left: 22px; margin: 6px 0; }
+  .center { text-align: center; }
+  .over-text { font-size: 22px; text-align: center; margin: 6px 0 18px; }
+
+  .choices { display: grid; gap: 8px; }
+  .choice {
+    display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px;
+    background: var(--panel2); border: 3px solid transparent; cursor: pointer; text-align: left;
+    color: var(--text); font-size: 19px; width: 100%;
+  }
+  .choice.on { border-color: #00008a; background: #e8e8ff; }
+  .choice .name { font-weight: 700; }
+  .choice .sub { font-size: 15px; color: var(--muted); margin-top: 2px; }
+  .choice .demo { display: flex; gap: 3px; margin-left: auto; flex: none; }
+  .choice .demo .ball { width: 26px; height: 26px; }
+
+  /* ---------- iPad / máy tính bảng: mọi thứ to hơn ---------- */
+  @media (min-width: 700px) {
+    body { padding: 20px 24px 32px; }
+    h1 { font-size: 38px; }
+    .lvl-tag { font-size: 20px; }
+    .icon-btn { font-size: 24px; padding: 14px 18px; border-radius: 16px; }
+    .top-btns .icon-btn { max-width: 230px; }
+    .bar { padding: 16px 20px; border-radius: 18px; }
+    .lbl { font-size: 20px; }
+    .stat .val { font-size: calc(46px * var(--k, 1)); }
+    .next .balls { gap: 10px; }
+    .next .balls .ball { width: 50px; height: 50px; }
+    .board { gap: 2px; padding: 4px; }
+    .cell { border-radius: 0; }
+    .msg { font-size: 28px; min-height: 40px; }
+    button.big { font-size: 30px; padding: 22px 12px; border-radius: 18px; }
+    .dialog { max-width: 680px; padding: 28px; }
+    .dialog h2 { font-size: 36px; }
+    .dialog h3 { font-size: 26px; }
+    .dialog p, .dialog li { font-size: 23px; }
+    .choice { font-size: 24px; padding: 16px; }
+    .choice .sub { font-size: 19px; }
+    .choice .demo .ball { width: 38px; height: 38px; }
+    .over-text { font-size: 28px; }
+  }
+  /* iPad dựng đứng: bàn to hết chiều ngang nhưng vẫn chừa chỗ cho nút */
+  @media (min-width: 700px) and (orientation: portrait) {
+    .wrap { max-width: min(100%, calc(100vh - 400px)); }
+  }
+  /* iPad nằm ngang: bàn bên trái to hết chiều cao, bảng điểm và nút bên phải */
+  @media (min-width: 900px) and (orientation: landscape) {
+    body { height: 100vh; justify-content: center; }
+    .wrap {
+      max-width: none; width: auto;
+      grid-template-columns: calc(100vh - 52px) minmax(320px, 420px);
+      grid-template-rows: auto auto 1fr auto;
+      grid-template-areas: "board top" "board bar" "board msg" "board actions";
+      column-gap: 28px; align-items: start;
+    }
+    .top { flex-direction: column; align-items: stretch; }
+    .top-btns { flex: none; justify-content: stretch; }
+    .top-btns .icon-btn { max-width: none; }
+    .bar { flex-wrap: wrap; justify-content: space-around; }
+    .next { order: 3; width: 100%; margin-top: 8px; }
+    .msg { align-self: center; }
+    .actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Line 98</h1>
+      <div class="lvl-tag" id="lvlTag"></div>
+    </div>
+    <div class="top-btns">
+      <button class="icon-btn" id="btnHelp">❓ Cách chơi</button>
+      <button class="icon-btn" id="btnSet">⚙️ Tuỳ chọn</button>
+    </div>
+  </div>
+  <div class="bar">
+    <div class="stat"><div class="lbl">Điểm</div><div class="val" id="score">0</div></div>
+    <div class="next"><div class="lbl">Bi sắp ra</div><div class="balls" id="next"></div></div>
+    <div class="stat"><div class="lbl">Kỷ lục</div><div class="val" id="best">0</div></div>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="msg" id="msg"></div>
+  <div class="actions">
+    <button class="big alt" id="undo">↶ Đi lại</button>
+    <button class="big" id="new">Ván mới</button>
+  </div>
+</div>
+
+<!-- Cách chơi -->
+<div class="overlay" id="helpBox">
+  <div class="dialog">
+    <h2>Cách chơi</h2>
+    <h3>Mục tiêu</h3>
+    <p>Xếp <b>5 viên cùng loại trở lên</b> thành một hàng thẳng — ngang, dọc hoặc chéo — thì cả hàng biến mất và được cộng điểm. Chơi càng lâu càng nhiều điểm.</p>
+    <h3>Mỗi lượt đi</h3>
+    <ul>
+      <li>Chạm vào một viên bi — bi sẽ nhún nhảy.</li>
+      <li>Chạm vào ô trống muốn chuyển tới. Bi tự chạy theo đường trống; nếu bị chặn kín thì không đi được.</li>
+      <li>Nếu lượt đó <b>không ăn được hàng nào</b>, sẽ có thêm bi mới mọc lên (các chấm nhỏ trên bàn là chỗ bi sắp mọc).</li>
+      <li>Ăn được hàng thì <b>không</b> có bi mới — được đi tiếp.</li>
+    </ul>
+    <h3>Điểm</h3>
+    <ul>
+      <li>Hàng 5 viên: 10 điểm. Mỗi viên dài hơn được thêm điểm, ăn 2 hàng một lúc được nhiều hơn nữa.</li>
+    </ul>
+    <h3>Hết ván</h3>
+    <p>Khi bàn kín hết chỗ. Lỡ tay đi sai thì bấm <b>↶ Đi lại</b>. Ván đang chơi được tự lưu — tắt máy mở lại vẫn chơi tiếp.</p>
+    <h3>Mức chơi</h3>
+    <ul>
+      <li><b>Dễ</b>: 5 loại bi, mỗi lượt mọc 2 bi.</li>
+      <li><b>Vừa</b>: 6 loại bi, mỗi lượt mọc 3 bi.</li>
+      <li><b>Khó</b>: 7 loại bi, mỗi lượt mọc 3 bi — giống Line 98 gốc.</li>
+    </ul>
+    <p>Đổi mức chơi và kiểu bi ở nút <b>⚙️ Tuỳ chọn</b>.</p>
+    <div class="actions"><button class="big" data-close>Đã hiểu</button></div>
+  </div>
+</div>
+
+<!-- Tuỳ chọn -->
+<div class="overlay" id="setBox">
+  <div class="dialog">
+    <h2>Tuỳ chọn</h2>
+    <h3>Mức chơi</h3>
+    <div class="choices" id="lvlChoices"></div>
+    <h3>Âm thanh &amp; rung</h3>
+    <div class="choices" id="soundChoices"></div>
+    <h3>Kiểu bi</h3>
+    <div class="choices" id="themeChoices"></div>
+    <div class="actions"><button class="big" data-close>Xong</button></div>
+  </div>
+</div>
+
+<!-- Hết ván -->
+<div class="overlay" id="overBox">
+  <div class="dialog center">
+    <h2>Hết chỗ rồi!</h2>
+    <div class="over-text" id="overText"></div>
+    <div class="actions"><button class="big" id="again">Chơi ván mới</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const N = 9;
+
+  // 7 màu nền dùng chung — loại thứ k luôn mang màu thứ k, nên dù kiểu hình nào cũng phân biệt được bằng màu
+  // 7 màu bi của Line 98 gốc: đỏ, xanh lá, xanh dương, vàng, xanh ngọc, tím hồng, nâu
+  const BASE = ["#e00000", "#00a000", "#0020e0", "#e8d800", "#00c0d0", "#c000c0", "#8a3a0a"];
+  const SHADE = [
+    ["#ff9a8a", "#600000"], ["#9cff9c", "#004000"], ["#9cb4ff", "#000a60"], ["#ffffa8", "#6a6000"],
+    ["#b4ffff", "#005060"], ["#ffa8ff", "#500050"], ["#e0a070", "#3a1400"]
+  ];
+  const TINT = ["#ffc4c4", "#c4f0c4", "#c4ccff", "#fff7a8", "#c0f4f8", "#f4c0f4", "#e8ccb4"];
+
+  const THEMES = {
+    color:   { name: "Bi màu cơ bản",  sub: "Bi tròn bóng như Line 98 gốc", kind: "ball" },
+    number:  { name: "Bi màu có số",   sub: "Có số 1–7 trên bi, dễ phân biệt", kind: "num" },
+    zodiac:  { name: "12 con giáp",    sub: "Mỗi ván chọn ngẫu nhiên vài con", kind: "emoji",
+               items: ["🐭","🐮","🐯","🐱","🐲","🐍","🐴","🐐","🐵","🐔","🐶","🐷"] },
+    fruit:   { name: "Trái cây",       sub: "Táo, cam, nho, dưa hấu…", kind: "emoji",
+               items: ["🍎","🍊","🍋","🍇","🍉","🍓","🥝","🍌","🍑","🍒"] },
+    sea:     { name: "Biển cả",        sub: "Cá, cua, bạch tuộc, rùa…", kind: "emoji",
+               items: ["🐟","🦀","🐙","🐢","🐬","🦐","🐳","🐠","🦑"] },
+    flower:  { name: "Hoa lá",         sub: "Hoa hướng dương, hoa hồng, sen…", kind: "emoji",
+               items: ["🌻","🌹","🍀","🌸","🪷","🌵","🍁","🌷"] },
+    sport:   { name: "Thể thao",       sub: "Bóng đá, bóng rổ, cầu lông…", kind: "emoji",
+               items: ["⚽","🏀","🎾","🏐","🏸","🎱","⚾","🏓"] },
+    heart:   { name: "Trái tim",       sub: "Tim nhiều màu", kind: "emoji",
+               items: ["❤️","💙","💚","💛","💜","🩵","🧡"], fixed: true },
+  };
+
+  const LEVELS = {
+    easy:   { name: "Dễ",  sub: "5 loại bi · mỗi lượt mọc 2 bi", types: 5, spawn: 2 },
+    medium: { name: "Vừa", sub: "6 loại bi · mỗi lượt mọc 3 bi", types: 6, spawn: 3 },
+    hard:   { name: "Khó", sub: "7 loại bi · mỗi lượt mọc 3 bi (Line 98 gốc)", types: 7, spawn: 3 },
+  };
+
+  const SAVE_KEY = "line98-me-save", PREF_KEY = "line98-me-pref", BEST_KEY = "line98-me-best";
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+  };
+
+  const $ = id => document.getElementById(id);
+  const rand = n => Math.floor(Math.random() * n);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // ---------- Rung + âm thanh ----------
+  // iPhone/iPad Safari không cho trang web rung máy; điện thoại Android thì rung được
+  const buzz = ms => { try { if (pref.sound && navigator.vibrate) navigator.vibrate(ms); } catch {} };
+  let actx = null;
+  function tone(kind) {
+    if (!pref.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === "suspended") actx.resume();
+      const now = actx.currentTime, g = actx.createGain();
+      g.connect(actx.destination);
+      if (kind === "pop") {
+        // tiếng "bụp": nhiễu ngắn + nốt trầm rơi xuống
+        const len = actx.sampleRate * 0.18, buf = actx.createBuffer(1, len, actx.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+        const src = actx.createBufferSource(); src.buffer = buf;
+        const f = actx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 1800;
+        src.connect(f); f.connect(g);
+        g.gain.setValueAtTime(0.5, now);
+        src.start(now);
+        const o = actx.createOscillator(), og = actx.createGain();
+        o.frequency.setValueAtTime(420, now); o.frequency.exponentialRampToValueAtTime(90, now + 0.2);
+        og.gain.setValueAtTime(0.35, now); og.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        o.connect(og); og.connect(actx.destination); o.start(now); o.stop(now + 0.26);
+      } else {
+        const o = actx.createOscillator();
+        o.type = "sine";
+        const f0 = kind === "tap" ? 660 : kind === "bad" ? 200 : 520;
+        o.frequency.setValueAtTime(f0, now);
+        if (kind === "bad") o.frequency.linearRampToValueAtTime(140, now + 0.15);
+        g.gain.setValueAtTime(0.18, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        o.connect(g); o.start(now); o.stop(now + 0.13);
+      }
+    } catch {}
+  }
+
+  // Điểm không giới hạn — hiện có dấu chấm ngăn hàng nghìn cho dễ đọc
+  const fmt = n => Number(n).toLocaleString("vi-VN");
+  // Số càng dài chữ càng nhỏ lại, để luôn nằm trên một dòng
+  const fitVal = el => el.style.setProperty("--k", Math.min(1, 7 / el.textContent.length).toFixed(3));
+
+  let pref = { level: "hard", theme: "color", sound: true };
+  try { Object.assign(pref, JSON.parse(store.get(PREF_KEY) || "{}")); } catch {}
+  if (!LEVELS[pref.level]) pref.level = "hard";
+  if (!THEMES[pref.theme]) pref.theme = "color";
+  let bests = {};
+  try { bests = JSON.parse(store.get(BEST_KEY) || "{}") || {}; } catch {}
+  if (typeof bests !== "object") bests = {};
+
+  // Trạng thái ván
+  let grid, preview, nextColors, score, level, seed, selected = -1, busy = false, history = [];
+
+  const lv = () => LEVELS[level];
+  const freeCells = () => { const a = []; for (let i = 0; i < N * N; i++) if (grid[i] < 0) a.push(i); return a; };
+  const emptyNoPreview = () => freeCells().filter(i => preview[i] < 0);
+
+  // Với kiểu hình có nhiều hơn 7 hình (12 con giáp…), mỗi ván rút ngẫu nhiên vài hình theo `seed`
+  function glyphFor(t) {
+    const th = THEMES[pref.theme];
+    if (th.kind !== "emoji") return null;
+    if (th.fixed) return th.items[t];
+    const order = th.items.map((_, i) => i).sort((a, b) => seed[a] - seed[b]);
+    return th.items[order[t]];
+  }
+
+  const sphere = t => `radial-gradient(circle at 36% 30%, ${SHADE[t][0]} 0%, ${BASE[t]} 40%, ${SHADE[t][1]} 82%, #000 115%)`;
+
+  function makeBall(t, extra) {
+    const b = document.createElement("div");
+    const th = THEMES[pref.theme];
+    b.className = "ball " + (extra || "");
+    if (th.kind === "ball") {
+      b.classList.add("shade");
+      b.style.background = sphere(t);
+    } else if (th.kind === "num") {
+      b.classList.add("shade", "num");
+      b.style.background = sphere(t);
+      b.innerHTML = `<span class="glyph">${t + 1}</span>`;
+    } else {
+      b.classList.add("disk");
+      b.style.background = th.fixed ? "#fffaf0" : TINT[t];
+      b.innerHTML = `<span class="glyph">${glyphFor(t)}</span>`;
+    }
+    return b;
+  }
+
+  // ---------- Bàn cờ ----------
+  const boardEl = $("board"), cells = [];
+  const fx = document.createElement("div"); fx.className = "fx";
+  for (let i = 0; i < N * N; i++) {
+    const c = document.createElement("div");
+    c.className = "cell";
+    c.addEventListener("click", () => onCell(i));
+    boardEl.appendChild(c);
+    cells.push(c);
+  }
+  boardEl.appendChild(fx);
+
+  // Hiệu ứng nổ: vòng sáng + mảnh vỡ bắn ra từ từng viên bi
+  function burst(i, t) {
+    const cs = cells[i].offsetWidth;
+    const x = cells[i].offsetLeft + cs / 2, y = cells[i].offsetTop + cs / 2;
+    const col = BASE[t], light = SHADE[t][0];
+    const ring = document.createElement("div");
+    Object.assign(ring.style, { width: cs + "px", height: cs + "px", border: `3px solid ${light}`, boxShadow: `0 0 12px ${col}` });
+    fx.appendChild(ring);
+    ring.animate([
+      { transform: `translate(${x - cs/2}px, ${y - cs/2}px) scale(.3)`, opacity: 1 },
+      { transform: `translate(${x - cs/2}px, ${y - cs/2}px) scale(1.7)`, opacity: 0 }
+    ], { duration: 450, easing: "ease-out" }).onfinish = () => ring.remove();
+    for (let k = 0; k < 12; k++) {
+      const p = document.createElement("div"), sz = cs * (0.12 + Math.random() * 0.14);
+      Object.assign(p.style, { width: sz + "px", height: sz + "px",
+        background: `radial-gradient(circle at 35% 30%, ${light}, ${col} 60%)` });
+      fx.appendChild(p);
+      const a = (k / 12) * Math.PI * 2 + Math.random() * 0.5, d = cs * (0.8 + Math.random() * 1.1);
+      const x0 = x - sz / 2, y0 = y - sz / 2;
+      p.animate([
+        { transform: `translate(${x0}px, ${y0}px) scale(1)`, opacity: 1 },
+        { transform: `translate(${x0 + Math.cos(a) * d}px, ${y0 + Math.sin(a) * d + cs * 0.4}px) scale(.2)`, opacity: 0 }
+      ], { duration: 550 + Math.random() * 250, easing: "cubic-bezier(.2,.7,.4,1)" }).onfinish = () => p.remove();
+    }
+  }
+  function floatPoints(set, pts) {
+    let sx = 0, sy = 0;
+    set.forEach(i => { sx += cells[i].offsetLeft + cells[i].offsetWidth / 2; sy += cells[i].offsetTop + cells[i].offsetHeight / 2; });
+    sx /= set.size; sy /= set.size;
+    const el = document.createElement("div"); el.className = "pts";
+    el.textContent = "+" + fmt(pts);
+    el.style.fontSize = cells[0].offsetWidth * 0.9 + "px";
+    fx.appendChild(el);
+    const w = el.offsetWidth, h = el.offsetHeight;
+    el.animate([
+      { transform: `translate(${sx - w/2}px, ${sy - h/2}px) scale(.5)`, opacity: 0 },
+      { transform: `translate(${sx - w/2}px, ${sy - h/2 - 10}px) scale(1.15)`, opacity: 1, offset: .25 },
+      { transform: `translate(${sx - w/2}px, ${sy - h/2 - 70}px) scale(1)`, opacity: 0 }
+    ], { duration: 1100, easing: "ease-out" }).onfinish = () => el.remove();
+  }
+  // Cỡ chữ của hình theo cỡ ô
+  function fitGlyphs() {
+    const w = cells[0].getBoundingClientRect().width || 36;
+    boardEl.style.setProperty("--g", (w * 0.58) + "px");
+    document.querySelectorAll(".board .ball .glyph").forEach(g => {
+      const small = g.parentElement.classList.contains("small");
+      g.style.fontSize = (w * (small ? 0.28 : 0.62)) + "px";
+    });
+    document.querySelectorAll(".next .glyph").forEach(g => g.style.fontSize = "22px");
+    document.querySelectorAll(".choice .glyph").forEach(g => g.style.fontSize = "17px");
+  }
+  window.addEventListener("resize", fitGlyphs);
+  window.addEventListener("load", fitGlyphs);
+
+  function render(popSet, growSet) {
+    for (let i = 0; i < N * N; i++) {
+      const c = cells[i];
+      c.innerHTML = "";
+      c.classList.remove("trail");
+      if (grid[i] >= 0) {
+        let cls = "";
+        if (i === selected) cls += " sel";
+        if (popSet && popSet.has(i)) cls += " pop";
+        if (growSet && growSet.has(i)) cls += " grow";
+        c.appendChild(makeBall(grid[i], cls));
+      } else if (preview[i] >= 0) {
+        c.appendChild(makeBall(preview[i], "small"));
+      }
+    }
+    const nx = $("next"); nx.innerHTML = "";
+    nextColors.forEach(t => nx.appendChild(makeBall(t)));
+    $("score").textContent = fmt(score);
+    fitVal($("score"));
+    const key = level;
+    if (score > (bests[key] || 0)) { bests[key] = score; store.set(BEST_KEY, JSON.stringify(bests)); }
+    $("best").textContent = fmt(bests[key] || 0);
+    fitVal($("best"));
+    $("lvlTag").textContent = `Mức ${lv().name} · ${THEMES[pref.theme].name}`;
+    $("undo").disabled = !history.length || busy;
+    fitGlyphs();
+  }
+
+  // ---------- Luật chơi ----------
+  const pickNext = () => Array.from({ length: lv().spawn }, () => rand(lv().types));
+
+  function placePreview() {
+    preview = Array(N * N).fill(-1);
+    const free = freeCells();
+    for (const t of nextColors) {
+      if (!free.length) break;
+      preview[free.splice(rand(free.length), 1)[0]] = t;
+    }
+  }
+
+  const snapshot = () => JSON.stringify({ grid, preview, nextColors, score, level, seed });
+  function restore(s) {
+    const o = JSON.parse(s);
+    grid = o.grid; preview = o.preview; nextColors = o.nextColors; score = o.score;
+    level = LEVELS[o.level] ? o.level : pref.level;
+    seed = o.seed || Array.from({ length: 12 }, Math.random);
+  }
+  const save = () => store.set(SAVE_KEY, snapshot());
+
+  function newGame() {
+    level = pref.level;
+    seed = Array.from({ length: 12 }, Math.random);
+    grid = Array(N * N).fill(-1);
+    preview = Array(N * N).fill(-1);
+    score = 0; selected = -1; busy = false; history = [];
+    for (let k = 0; k < 5; k++) { const f = freeCells(); grid[f[rand(f.length)]] = rand(lv().types); }
+    nextColors = pickNext();
+    placePreview();
+    closeAll();
+    $("msg").textContent = "";
+    render(); save();
+  }
+
+  // Đường đi ngắn nhất — chỉ ngang/dọc, qua ô trống (ô có chấm nhỏ vẫn đi qua được)
+  function findPath(from, to) {
+    const prev = Array(N * N).fill(-2);
+    prev[from] = -1;
+    const q = [from];
+    while (q.length) {
+      const cur = q.shift();
+      if (cur === to) break;
+      const r = Math.floor(cur / N), c = cur % N;
+      for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr >= N || nc < 0 || nc >= N) continue;
+        const n = nr * N + nc;
+        if (prev[n] !== -2 || grid[n] >= 0) continue;
+        prev[n] = cur; q.push(n);
+      }
+    }
+    if (prev[to] === -2) return null;
+    const path = [];
+    for (let p = to; p !== -1; p = prev[p]) path.unshift(p);
+    return path;
+  }
+
+  // Trả về các hàng (mảng ô) dài từ 5 đi qua ô i
+  function linesAt(i) {
+    const t = grid[i], out = [];
+    if (t < 0) return out;
+    const r0 = Math.floor(i / N), c0 = i % N;
+    for (const [dr, dc] of [[0,1],[1,0],[1,1],[1,-1]]) {
+      const line = [i];
+      for (const s of [1, -1]) {
+        let r = r0 + dr * s, c = c0 + dc * s;
+        while (r >= 0 && r < N && c >= 0 && c < N && grid[r * N + c] === t) {
+          line.push(r * N + c); r += dr * s; c += dc * s;
+        }
+      }
+      if (line.length >= 5) out.push(line);
+    }
+    return out;
+  }
+
+  // Ăn các hàng; trả về true nếu có ăn
+  async function clearLines(lines) {
+    if (!lines.length) return false;
+    const set = new Set(); lines.forEach(l => l.forEach(x => set.add(x)));
+    render(set);
+    set.forEach(i => burst(i, grid[i]));
+    tone("pop"); buzz([30, 40, 60]);
+    await sleep(340);
+    set.forEach(i => grid[i] = -1);
+    // 5 viên = 10đ, mỗi viên dư +4đ; ăn nhiều hàng một lúc nhân thêm
+    let pts = 0;
+    lines.forEach(l => pts += 10 + (l.length - 5) * 4);
+    if (lines.length > 1) pts *= lines.length;
+    score += pts;
+    floatPoints(set, pts);
+    $("msg").textContent = pts > 10 ? `Giỏi quá! +${fmt(pts)}` : `+${pts}`;
+    return true;
+  }
+
+  async function onCell(i) {
+    if (busy) return;
+    if (grid[i] >= 0) {
+      selected = (selected === i) ? -1 : i;
+      if (selected >= 0) { tone("tap"); buzz(12); }
+      render(); return;
+    }
+    if (selected < 0) { $("msg").textContent = "Chạm vào một viên bi trước nhé"; return; }
+    const path = findPath(selected, i);
+    if (!path) {
+      $("msg").textContent = "Bị chặn rồi, không đi tới ô đó được";
+      tone("bad"); buzz([20, 30, 20]);
+      const b = cells[selected].querySelector(".ball");
+      if (b) { b.classList.remove("sel"); void b.offsetWidth; b.classList.add("shake");
+               setTimeout(() => b.classList.replace("shake", "sel"), 360); }
+      return;
+    }
+    tone("move");
+
+    busy = true;
+    history.push(snapshot());
+    if (history.length > 30) history.shift();
+    $("msg").textContent = "";
+
+    const t = grid[selected];
+    selected = -1;
+    for (let k = 1; k < path.length; k++) {
+      grid[path[k - 1]] = -1; grid[path[k]] = t;
+      render();
+      for (let j = 0; j < k; j++) cells[path[j]].classList.add("trail");
+      await sleep(40);
+    }
+
+    // Bi đè lên chấm nhỏ thì chấm đó phải dời đi chỗ khác
+    const displaced = preview[i];
+    preview[i] = -1;
+
+    const ate = await clearLines(linesAt(i));
+    if (!ate) {
+      if (displaced >= 0) {
+        const f = emptyNoPreview();
+        if (f.length) preview[f[rand(f.length)]] = displaced;
+      }
+      const grown = new Set();
+      for (let k = 0; k < N * N; k++) {
+        if (preview[k] >= 0 && grid[k] < 0) { grid[k] = preview[k]; grown.add(k); }
+      }
+      preview = Array(N * N).fill(-1);
+      render(null, grown);
+      await sleep(260);
+      const lines = []; const seen = new Set();
+      grown.forEach(k => linesAt(k).forEach(l => {
+        const key = [...l].sort((a, b) => a - b).join(",");
+        if (!seen.has(key)) { seen.add(key); lines.push(l); }
+      }));
+      await clearLines(lines);
+      nextColors = pickNext();
+      placePreview();
+    } else if (displaced >= 0) {
+      // Ăn được hàng: chấm nhỏ bị đè vẫn giữ, chuyển sang ô trống khác
+      const f = emptyNoPreview();
+      if (f.length) preview[f[rand(f.length)]] = displaced;
+    }
+
+    busy = false;
+    render(); save();
+    if (!freeCells().length) gameOver();
+  }
+
+  function gameOver() {
+    const b = bests[level] || 0;
+    $("overText").textContent = `Được ${fmt(score)} điểm` + (score > 0 && score >= b ? " — kỷ lục mới! 🎉" : "");
+    $("overBox").classList.add("show");
+    store.set(SAVE_KEY, "");
+  }
+
+  // ---------- Hộp thoại ----------
+  function closeAll() { document.querySelectorAll(".overlay").forEach(o => o.classList.remove("show")); }
+  document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeAll));
+  document.querySelectorAll(".overlay").forEach(o => o.addEventListener("click", e => {
+    if (e.target === o && o.id !== "overBox") closeAll();
+  }));
+  $("btnHelp").addEventListener("click", () => $("helpBox").classList.add("show"));
+  $("btnSet").addEventListener("click", () => { buildSettings(); $("setBox").classList.add("show"); });
+
+  function buildSettings() {
+    const lc = $("lvlChoices"); lc.innerHTML = "";
+    for (const [k, L] of Object.entries(LEVELS)) {
+      const b = document.createElement("button");
+      b.className = "choice" + (k === pref.level ? " on" : "");
+      b.innerHTML = `<div><div class="name">${L.name}</div><div class="sub">${L.sub}</div></div>`;
+      b.addEventListener("click", () => {
+        if (k === pref.level) return;
+        if (score > 0 && !confirm(`Đổi sang mức ${L.name} sẽ bắt đầu ván mới. Đồng ý?`)) return;
+        pref.level = k; store.set(PREF_KEY, JSON.stringify(pref));
+        newGame();
+      });
+      lc.appendChild(b);
+    }
+    const sc = $("soundChoices"); sc.innerHTML = "";
+    for (const [v, name, sub] of [[true, "Bật", "Có tiếng “bụp” khi ăn bi, rung nhẹ (nếu máy hỗ trợ)"], [false, "Tắt", "Chơi im lặng"]]) {
+      const b = document.createElement("button");
+      b.className = "choice" + (pref.sound === v ? " on" : "");
+      b.innerHTML = `<div><div class="name">${name}</div><div class="sub">${sub}</div></div>`;
+      b.addEventListener("click", () => {
+        pref.sound = v; store.set(PREF_KEY, JSON.stringify(pref));
+        buildSettings(); if (v) tone("tap");
+      });
+      sc.appendChild(b);
+    }
+    const tc = $("themeChoices"); tc.innerHTML = "";
+    const cur = pref.theme;
+    for (const [k, T] of Object.entries(THEMES)) {
+      const b = document.createElement("button");
+      b.className = "choice" + (k === cur ? " on" : "");
+      b.innerHTML = `<div><div class="name">${T.name}</div><div class="sub">${T.sub}</div></div><div class="demo"></div>`;
+      pref.theme = k;
+      const demo = b.querySelector(".demo");
+      for (let t = 0; t < 4; t++) demo.appendChild(makeBall(t));
+      b.addEventListener("click", () => {
+        pref.theme = k; store.set(PREF_KEY, JSON.stringify(pref));
+        buildSettings(); render();
+      });
+      tc.appendChild(b);
+    }
+    pref.theme = cur;
+    fitGlyphs();
+  }
+
+  // ---------- Tự cập nhật ----------
+  // Mỗi lần đăng bản mới, deploy.sh ghi số phiên bản mới vào version.json.
+  // Trang hỏi file đó lúc mở lại app và mỗi 5 phút; thấy khác thì tự tải lại.
+  // Ván đang chơi đã lưu trong máy nên tải lại không mất gì.
+  const APP_VERSION = "20261002-205000";
+  async function checkUpdate() {
+    if (busy || location.protocol === "file:") return;
+    try {
+      const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) return;
+      const v = (await r.json()).version;
+      if (v && v !== APP_VERSION && APP_VERSION !== "__" + "VERSION__") {
+        // Mỗi bản chỉ thử tải lại một lần, tránh lặp nếu máy chủ còn giữ bản cũ
+        let tried = null; try { tried = sessionStorage.getItem("line98-tried"); } catch {}
+        if (tried === v) return;
+        try { sessionStorage.setItem("line98-tried", v); } catch {}
+        $("msg").textContent = "Có bản mới, đang cập nhật…";
+        save();
+        setTimeout(() => location.replace(location.pathname + "?v=" + encodeURIComponent(v)), 800);
+      }
+    } catch {}
+  }
+  setInterval(checkUpdate, 5 * 60 * 1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+  window.addEventListener("pageshow", checkUpdate);
+
+  // ---------- Bắt đầu ----------
+  $("new").addEventListener("click", () => {
+    if (score > 0 && !confirm("Bỏ ván này để chơi ván mới?")) return;
+    newGame();
+  });
+  $("again").addEventListener("click", newGame);
+  $("undo").addEventListener("click", () => {
+    if (busy || !history.length) return;
+    restore(history.pop());
+    selected = -1; $("msg").textContent = "";
+    render(); save();
+  });
+
+  const saved = store.get(SAVE_KEY);
+  if (saved) {
+    try { restore(saved); render(); } catch { newGame(); }
+  } else {
+    newGame();
+    if (!store.get(PREF_KEY)) { // lần đầu mở: hiện cách chơi
+      $("helpBox").classList.add("show");
+      store.set(PREF_KEY, JSON.stringify(pref));
+    }
+  }
+})();
+</script>
+</body>
+</html>
